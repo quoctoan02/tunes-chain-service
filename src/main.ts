@@ -13,20 +13,10 @@ const main = async () => {
     switch (runService) {
         case "token_checker": {
             await TokenCheckerService.run_process();
-            await NftSupplyService.run_process();
-            break;
-        }
-        case "nft_opensea_checker": {
-            await NftSupplyService.run_process();
             break;
         }
         case "claim_checker": {
             await ClaimCheckerService.run_process();
-            break;
-        }
-        case "sync_tweet": {
-            await CrawlTweetService.run_process();
-            await CrawlTweetMetricService.run_process();
             break;
         }
         default:

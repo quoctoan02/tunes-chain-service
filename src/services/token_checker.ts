@@ -4,9 +4,8 @@ import { sql } from "../databases";
 import { ETH } from "../blockchain";
 import { BlockchainModel, ContractModel } from "../models";
 import { config } from "../config";
-import nft_abi from "../../assets/NFTABI.json";
-import combine_abi from "../../assets/COMBINEABI.json";
-import { combine, transfer } from "./token-checker.service";
+import market from "../../assets/market.json";
+import {buySong} from "./token-checker.service";
 import { NftCollectionModel } from "../models/contract";
 
 const sync_blockchain = async (blockchain: any) => {
@@ -21,7 +20,7 @@ const sync_blockchain = async (blockchain: any) => {
         const step = 100;
         const nft_collections_list: any[] = await NftCollectionModel.list_nft({
             blockchain_id: blockchain.id,
-            type: [ContractType.COMBINE, ContractType.NFT],
+            type: [ContractType.MARKETPLACE],
         });
 
         // get last sign block
@@ -44,8 +43,7 @@ const sync_blockchain = async (blockchain: any) => {
                         if (!collection) throw ErrorCode.CONTRACT_NOT_EXISTED;
                         let iface;
                         const mapAbi: any = {
-                            [ContractType.COMBINE]: combine_abi,
-                            [ContractType.NFT]: nft_abi,
+                            [ContractType.MARKETPLACE]: market,
                         };
                         const abi = mapAbi[collection.type];
                         if (!abi) throw ErrorCode.ABI_NOT_EXIST;
@@ -59,12 +57,8 @@ const sync_blockchain = async (blockchain: any) => {
                         }
                         // logger.info(log_data);
                         switch (log_data.name) {
-                            case "Transfer": {
-                                await transfer(log_data, collection, log, blockchain, conn);
-                                break;
-                            }
-                            case "CombineNftEvent": {
-                                await combine(log_data, collection, log, nft_collections_list, conn);
+                            case "BuySong": {
+                                await buySong(log_data, collection, log, blockchain, conn);
                                 break;
                             }
                             // case "event_deposit": {
