@@ -1,0 +1,114 @@
+.deployBranch: &deployBranch
+  - production
+
+.Tags: &tags
+  - moonlab-runner
+
+.Variables: &variables
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  VERSION: $CI_COMMIT_SHORT_SHA
+  ENV: prod
+  DOCKER_REGISTRY_HOST: 325314427579.dkr.ecr.ap-southeast-1.amazonaws.com
+  APPLICATION: $ECR_NAME
+  NAMEAPP: moon-crawl
+  IMAGE_FIX: $DOCKER_REGISTRY_HOST/$APPLICATION:$NAMEAPP-$ENV
+  IMAGE_BACKUP: $DOCKER_REGISTRY_HOST/$APPLICATION:$NAMEAPP-$ENV-$CI_COMMIT_SHORT_SHA
+  SSH_USER: ubuntu
+  SSH_IP: $IP_PROD
+  SERVICE_NAME_1: token_checker
+
+build-production:
+  stage: build
+  image:
+    name: ductn4/ci-node-gitops
+  services:
+    - docker:stable-dind
+  variables:
+    <<: *variables
+  script:
+    # - if [ "$CI_COMMIT_BRANCH" == "testing" ]; then ENV="testing"; fi
+    # - if [ "$CI_COMMIT_BRANCH" == "staging" ]; then ENV="staging"; fi
+    - if [ "$ENV" == "prod" ]; then cp $VAR_FILE_PROD .env; fi
+    # docker
+    - DOCKER_BUILDKIT=1 docker build -t $IMAGE_FIX -f Dockerfile .
+    - docker tag $IMAGE_FIX $IMAGE_BACKUP
+    # Set AWS key
+    - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+    - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+    - aws configure set region $AWS_DEFAULT_REGION
+    # login aws ecr
+    - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $DOCKER_REGISTRY_HOST/$APPLICATION
+    - docker push $IMAGE_BACKUP
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  tags: *tags
+  only: *deployBranch
+  allow_failure: false
+
+# Deploy token checker
+deploy-token-checker:
+  stage: deploy
+  image:
+    # name: $DOCKER_REGISTRY_HOST/ci-node-gitops
+    name: alpine:latest
+    entrypoint: [ "" ]
+  variables:
+    <<: *variables
+  script:
+    # add new line ban ei :v
+    - chmod og= $SSH_KEY_PROD
+    - apk update && apk add openssh-client
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $DOCKER_REGISTRY_HOST/$APPLICATION"
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "docker pull $IMAGE_BACKUP"
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "docker rm -f $SERVICE_NAME_1 || true"
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "docker run -itd --name $SERVICE_NAME_1 --env __SERVICE_NAME__=$SERVICE_NAME_1 $IMAGE_BACKUP"
+
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  tags: *tags
+  only: *deployBranch
+  when: manual
+# ======== Manual jobs ==========
+
+# token checker
+stop-token-checker:
+  stage: manual-job
+  image:
+    # name: $DOCKER_REGISTRY_HOST/ci-node-gitops
+    name: alpine:latest
+    entrypoint: [ "" ]
+  variables:
+    <<: *variables
+  script:
+    # add new line ban ei :v
+    - chmod og= $SSH_KEY_PROD
+    - apk update && apk add openssh-client
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "docker stop $SERVICE_NAME_1 || true"
+
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  tags: *tags
+  only: *deployBranch
+  when: manual
+
+start-token-checker:
+  stage: manual-job
+  image:
+    # name: $DOCKER_REGISTRY_HOST/ci-node-gitops
+    name: alpine:latest
+    entrypoint: [ "" ]
+  variables:
+    <<: *variables
+  script:
+    # add new line ban ei :v
+    - chmod og= $SSH_KEY_PROD
+    - apk update && apk add openssh-client
+    - ssh -i $SSH_KEY_PROD -o StrictHostKeyChecking=no $SSH_USER@$SSH_IP "docker start $SERVICE_NAME_1 || true"
+
+  environment:
+    name: $CI_COMMIT_REF_NAME
+  tags: *tags
+  only: *deployBranch
+  when: manual
+
