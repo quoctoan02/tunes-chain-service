@@ -135,7 +135,11 @@ export enum NftBoardStatus {
 
 export enum ContractType {
     MARKETPLACE = 1,
-    DEPOSIT_CLAIM
+    TOKEN,
+    TOKEN_CLAIM,
+    NFT,
+    MINT_NFT
+
 }
 
 export enum BlockchainEventType {

@@ -1,12 +1,16 @@
-import { ContractType, ErrorCode, logger, Utils } from "../utils";
-import { ethers } from "ethers";
-import { sql } from "../databases";
-import { ETH } from "../blockchain";
-import { BlockchainModel, ContractModel } from "../models";
-import { config } from "../config";
+import {ContractType, ErrorCode, logger, Utils} from "../utils";
+import {ethers} from "ethers";
+import {sql} from "../databases";
+import {ETH} from "../blockchain";
+import {BlockchainModel} from "../models";
+import {config} from "../config";
 import market from "../../assets/market.json";
-import {buySong} from "./token-checker.service";
-import { NftCollectionModel } from "../models/contract";
+import token from "../../assets/Erc20ABI.json";
+import mintNftAbi from "../../assets/mintNftABI.json";
+import nftAbi from "../../assets/NFTABI.json";
+import tokenClaim from "../../assets/ClaimABI.json";
+import {buySong, mintNft, transfer} from "./token-checker.service";
+import {NftCollectionModel} from "../models/contract";
 
 const sync_blockchain = async (blockchain: any) => {
     try {
@@ -20,7 +24,8 @@ const sync_blockchain = async (blockchain: any) => {
         const step = 100;
         const nft_collections_list: any[] = await NftCollectionModel.list_nft({
             blockchain_id: blockchain.id,
-            type: [ContractType.MARKETPLACE],
+            // type: [ContractType.MARKETPLACE, ContractType.TOKEN, ContractType.TOKEN_CLAIM, ContractType.NFT, ContractType.MINT_NFT],
+            type: [ContractType.MARKETPLACE, ContractType.TOKEN, ContractType.TOKEN_CLAIM],
         });
 
         // get last sign block
@@ -44,6 +49,10 @@ const sync_blockchain = async (blockchain: any) => {
                         let iface;
                         const mapAbi: any = {
                             [ContractType.MARKETPLACE]: market,
+                            [ContractType.TOKEN]: token,
+                            [ContractType.TOKEN_CLAIM]: tokenClaim,
+                            [ContractType.NFT]: nftAbi,
+                            [ContractType.MINT_NFT]: mintNftAbi,
                         };
                         const abi = mapAbi[collection.type];
                         if (!abi) throw ErrorCode.ABI_NOT_EXIST;
@@ -55,10 +64,19 @@ const sync_blockchain = async (blockchain: any) => {
                             logger.info("parse log exception", e);
                             continue;
                         }
-                        // logger.info(log_data);
+                         logger.info(log_data);
                         switch (log_data.name) {
                             case "BuySong": {
                                 await buySong(log_data, collection, log, blockchain, conn);
+                                break;
+                            }
+                            // case "Transfer": {
+                            //     await transfer(log_data, collection, log, blockchain, conn);
+                            //     break;
+                            // }
+
+                            case "MintNftEvent": {
+                                await mintNft(log_data, collection, log, blockchain, conn);
                                 break;
                             }
                             // case "event_deposit": {

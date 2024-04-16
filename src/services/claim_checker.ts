@@ -10,7 +10,7 @@ const claim_checker = async () => {
         const blockchains = await BlockchainModel.list();
         // get list pending withdrawal
         const list = (await WithdrawalModel.list({status: WithdrawalStatus.REQUESTED})).data;
-        const claim_contract = await ContractModel.getByType('type', ContractType.DEPOSIT_CLAIM);
+        const claim_contract = await ContractModel.getByType('type', ContractType.TOKEN_CLAIM);
         for (let withdrawal of list) {
             // get claim info
             const claimInfo = await Claim.getClaimById(blockchains[0], withdrawal.id, claim_contract.address);
