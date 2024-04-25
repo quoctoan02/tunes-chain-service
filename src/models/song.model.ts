@@ -1,9 +1,9 @@
-import {doQuery} from "../databases";
-import {Utils} from "../utils";
+import {doQuery, sql} from "../databases";
+import {SongStatus, Utils} from "../utils";
 
-const table = `user_songs`;
+const table = `songs`;
 
-export const UserSongModel = {
+export const SongModel = {
     create: async (data: any, conn?: any) => {
         return doQuery.insertRow(table, data, conn);
     },
@@ -11,7 +11,18 @@ export const UserSongModel = {
     getByType: async (type: string, value: any) => {
         return doQuery.getByType(table, type, value);
     },
-
+    getSongIdByArtistAddress: async (address: string) => {
+        let query = `select s.*, owner.address owner_address
+                            from songs s
+                                     join(select ar.*, al.id album_id
+                                          from artists ar
+                                                   join albums al on ar.id = al.artist_id) owner on owner.album_id = s.album_id
+                            where owner.address = ?
+                            and s.status = ${SongStatus.ACTIVATED}
+                            limit 1`
+        const [result] = await sql.query(query, [address])
+        return result[0]
+    },
     update: async (data: any, conn?: any) => {
         return doQuery.updateRow(table, data, data.id, conn);
     },

@@ -118,7 +118,11 @@ export enum NftStatus {
     NOT_OPEN = 1,
     OPENED = 2,
 }
-
+export enum SongStatus {
+    ACTIVATED = 1,
+    ATTACHED_NFT,
+    REMOVED,
+}
 export enum NftBoardLevel {
     LEVEL_1 = 1,
     LEVEL_2,
@@ -134,7 +138,7 @@ export enum NftBoardStatus {
 }
 
 export enum ContractType {
-    BUY_SONG = 1,
+    BUY_MUSIC = 1,
     TOKEN,
     TOKEN_CLAIM,
     NFT,
