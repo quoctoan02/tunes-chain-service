@@ -4,12 +4,12 @@ import {sql} from "../databases";
 import {ETH} from "../blockchain";
 import {BlockchainModel} from "../models";
 import {config} from "../config";
-import market from "../../assets/market.json";
+import buySongAbi from "../../assets/BuySongAbi.json";
 import token from "../../assets/Erc20ABI.json";
 import mintNftAbi from "../../assets/mintNftABI.json";
 import nftAbi from "../../assets/NFTABI.json";
 import tokenClaim from "../../assets/ClaimABI.json";
-import {buySong, mintNft, transfer} from "./token-checker.service";
+import {buySong, transfer} from "./token-checker.service";
 import {NftCollectionModel} from "../models/contract";
 
 const sync_blockchain = async (blockchain: any) => {
@@ -25,7 +25,7 @@ const sync_blockchain = async (blockchain: any) => {
         const nft_collections_list: any[] = await NftCollectionModel.list_nft({
             blockchain_id: blockchain.id,
             // type: [ContractType.MARKETPLACE, ContractType.TOKEN, ContractType.TOKEN_CLAIM, ContractType.NFT, ContractType.MINT_NFT],
-            type: [ContractType.MARKETPLACE, ContractType.TOKEN, ContractType.TOKEN_CLAIM],
+            type: [ContractType.BUY_SONG, ContractType.TOKEN_CLAIM, ContractType.MINT_NFT],
         });
 
         // get last sign block
@@ -48,10 +48,8 @@ const sync_blockchain = async (blockchain: any) => {
                         if (!collection) throw ErrorCode.CONTRACT_NOT_EXISTED;
                         let iface;
                         const mapAbi: any = {
-                            [ContractType.MARKETPLACE]: market,
-                            [ContractType.TOKEN]: token,
+                            [ContractType.BUY_SONG]: buySongAbi,
                             [ContractType.TOKEN_CLAIM]: tokenClaim,
-                            [ContractType.NFT]: nftAbi,
                             [ContractType.MINT_NFT]: mintNftAbi,
                         };
                         const abi = mapAbi[collection.type];
@@ -70,13 +68,8 @@ const sync_blockchain = async (blockchain: any) => {
                                 await buySong(log_data, collection, log, blockchain, conn);
                                 break;
                             }
-                            // case "Transfer": {
-                            //     await transfer(log_data, collection, log, blockchain, conn);
-                            //     break;
-                            // }
-
-                            case "MintNftEvent": {
-                                await mintNft(log_data, collection, log, blockchain, conn);
+                            case "Transfer": {
+                                await transfer(log_data, collection, log, blockchain, conn);
                                 break;
                             }
                             // case "event_deposit": {

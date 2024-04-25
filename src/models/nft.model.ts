@@ -92,9 +92,7 @@ export const NftModel = {
                      SET owner = '${address}'
                      WHERE token_id = ${token_id} and contract_id = ${contract_id}`;
         let [result, ignored] = await conn.query(query);
-
-        // @ts-ignore
-        if (result.affectedRows !== 1) throw ErrorCode.UPDATE_ZERO_FIELD;
+        return result.affectedRows !== 0;
     },
     combine: async (data: any, conn?: any) => {
         if (!conn) conn = sql;

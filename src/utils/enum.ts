@@ -134,7 +134,7 @@ export enum NftBoardStatus {
 }
 
 export enum ContractType {
-    MARKETPLACE = 1,
+    BUY_SONG = 1,
     TOKEN,
     TOKEN_CLAIM,
     NFT,
