@@ -41,9 +41,8 @@ export const NftModel = {
         return result.length ? result[0] : null;
     },
     get_by_token_id: async (contract_id: number, token_id: number) => {
-        const query: string = `select n.*, nc.address, nc.name as contract_name, nc.type as nft_type
+        const query: string = `select n.*
                              from nfts n
-                             inner join nft_collections nc on n.contract_id = nc.id
                              where n.token_id = ${token_id} and n.contract_id = ${contract_id}`;
         return doQuery.getOne(query);
     },

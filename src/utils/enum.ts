@@ -107,6 +107,7 @@ export enum NftEventType {
     BURNED,
     CANCEL_ORDER,
     COMBINE,
+    BUY_SONG
 }
 
 export enum NftSaleStatus {

@@ -16,7 +16,7 @@ import {BlockchainEventModel, NftBoardModel, NftModel, UserModel} from "../model
 import {ethers} from "ethers";
 import {NftMetadataModel} from "../models/nft-metadata";
 import {CombineHistoryModel} from "../models/combine-history.model";
-import {SongController} from "../controllers/song.controller";
+import {UserSongController} from "../controllers/user-song.controller";
 import {SongModel} from "../models/song.model";
 
 const Web3Utils = require("web3-utils");
@@ -65,14 +65,25 @@ const getSongId = async (artistAddress: string) => {
     return unattachedSong?.id
 }
 export const buySong = async (log_data: any, collection: any, log: any, contract_list: any, conn: any) => {
-    console.log("--> (token-checker.service.ts:104) ~ log_data:", log_data);
-
-    const buyer = log_data.args.buyer;
-    const songId = Web3Utils.hexToNumberString(log_data.args.songId);
+    const seller = log_data.args.seller.toLowerCase();
+    const buyer = log_data.args.buyer.toLowerCase();
     const price = ethers.utils.formatEther(log_data.args.price.toString());
+    const songId = Web3Utils.hexToNumberString(log_data.args.songId);
+    logger.trace("event buy_song: ", songId, price);
+    console.log({seller});
+    console.log({buyer});
+    const nft_event: any = {
+        transaction_hash: log.transactionHash,
+        token_id: songId,
+        contract_id: collection.id,
+        block_number: log.blockNumber,
+        metadata: JSON.stringify({seller, buyer, price}),
+        type: NftEventType.BUY_SONG,
+    };
 
     const user = await UserModel.getByType("address", buyer)
     if (user) {
-        await SongController.buy({songId, userId: user.id, price})
+        await UserSongController.buy({songId, userId: user.id, price}, conn)
     }
+    await BlockchainEventModel.create(nft_event, conn);
 };
