@@ -5,8 +5,6 @@ import {ETH} from "../blockchain";
 import {BlockchainModel} from "../models";
 import {config} from "../config";
 import buyMusicAbi from "../../assets/BuyMusicAbi.json";
-import token from "../../assets/Erc20ABI.json";
-import mintNftAbi from "../../assets/mintNftABI.json";
 import nftAbi from "../../assets/NFTABI.json";
 import tokenClaim from "../../assets/ClaimABI.json";
 import {buySong, transfer} from "./token-checker.service";
